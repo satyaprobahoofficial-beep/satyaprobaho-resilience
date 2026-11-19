@@ -4,7 +4,7 @@
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="Satyaprobaho &amp; Nexora Manager"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
