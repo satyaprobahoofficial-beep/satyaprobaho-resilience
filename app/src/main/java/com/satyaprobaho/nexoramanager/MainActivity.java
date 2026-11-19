@@ -123,14 +123,14 @@ public class MainActivity extends Activity {
         EditText search=new EditText(this);styleInput(search);search.setHint("🔎  মডিউলের নাম লিখে সার্চ করুন");search.setSingleLine(true);
         modules.addView(search);
         LinearLayout list=col();LinearLayout.LayoutParams listLp=new LinearLayout.LayoutParams(-1,-2);listLp.topMargin=dp(10);modules.addView(list,listLp);
-        Runnable render=()->{
+        final Runnable[] renderRef=new Runnable[1];\n        renderRef[0]=()->{
             list.removeAllViews();String q=search.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
             ArrayList<String> names=new ArrayList<>(getModules());Collections.sort(names,String.CASE_INSENSITIVE_ORDER);
             int shown=0;
             for(String name:names){if(!name.toLowerCase(java.util.Locale.ROOT).contains(q))continue;shown++;
                 LinearLayout item=row();pad(item,10,8,8,8);item.setBackground(bg(TILE,12));
                 TextView label=txt("▣  "+name,13,FG,true);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));
-                TextView remove=button("− সরান",RED,()->new AlertDialog.Builder(this).setTitle("মডিউল সরাবেন?").setMessage(name+" তালিকা থেকে সরানো হবে।").setNegativeButton("বাতিল",null).setPositiveButton("সরান",(d,w)->{Set<String> m=getModules();m.remove(name);saveModules(m);render.run();}).show());
+                TextView remove=button("− সরান",RED,()->new AlertDialog.Builder(this).setTitle("মডিউল সরাবেন?").setMessage(name+" তালিকা থেকে সরানো হবে।").setNegativeButton("বাতিল",null).setPositiveButton("সরান",(d,w)->{Set<String> m=getModules();m.remove(name);saveModules(m);renderRef[0].run();}).show());
                 LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-2,-2);item.addView(remove,rp);
                 LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,-2);ip.bottomMargin=dp(6);list.addView(item,ip);
             }
