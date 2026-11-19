@@ -2,7 +2,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
-        android:label="Satyaprobaho & Nexora Manager"
+        android:icon="@drawable/ic_launcher"
+        android:label="Satyaprobaho &amp; Nexora Manager"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
