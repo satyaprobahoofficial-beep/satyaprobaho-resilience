@@ -8,6 +8,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -19,6 +21,11 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.net.URI;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MainActivity extends Activity {
     private static final int BG=Color.rgb(8,12,29), CARD=Color.rgb(17,25,49), TILE=Color.rgb(24,35,66);
@@ -77,7 +84,7 @@ public class MainActivity extends Activity {
         section("সিস্টেম অবস্থা");LinearLayout st=card("সংযোগ ও নিরাপত্তা","লাইভ API ডেটা শুধু অনুমোদিত সংযোগ থাকলেই দেখানো হবে।");
         status(st,"Cloudflare / Website","Website link",GREEN);status(st,"Supabase / Database","Not connected",AMBER);status(st,"GitHub Actions / Build","Not checked",AMBER);status(st,"YouTube / Facebook APIs","Not connected",AMBER);
         section("দ্রুত কাজ");LinearLayout q=row();body.addView(q);tile(q,"◈","ইন্টিগ্রেশন","সংযোগের অবস্থা",BLUE,()->showIntegrations());tile(q,"▤","API ব্যবহার","ম্যানুয়াল রেকর্ড",AMBER,()->showUsage());
-        act(body,"⚙  অ্যাপ সেটিংস ও Nexora Admin URL",PURPLE,()->showSettings());footer();
+        act(body,"🧩  মডিউল ও পাসওয়ার্ড টুলস",CYAN,()->showTools());act(body,"⚙  অ্যাপ সেটিংস ও Nexora Admin URL",PURPLE,()->showSettings());footer();
     }
     private void showMaster(){
         page("Master Dashboard","Satyaprobaho + Nexora | Overview");
@@ -85,7 +92,7 @@ public class MainActivity extends Activity {
         status(c,"Satyaprobaho","Ready to open",GREEN);status(c,"Nexora","Ready to open",GREEN);status(c,"External integrations","Authorization required",AMBER);
         section("প্রতিষ্ঠান");LinearLayout r=row();body.addView(r);tile(r,"📰","সত্যপ্রবাহ","News & Media",CYAN,()->showCompany(true));tile(r,"✦","Nexora","Technology & Clients",PURPLE,()->showCompany(false));
         section("ম্যানেজমেন্ট");LinearLayout m=card("অপারেশন সেন্টার","প্রতিটি মডিউল আলাদা স্ক্রিনে খুলবে।");
-        act(m,"ইন্টিগ্রেশন ও API সংযোগ",BLUE,()->showIntegrations());act(m,"API কোটা ও খরচের রেকর্ড",AMBER,()->showUsage());act(m,"নিরাপত্তা ও অ্যাক্সেস নীতি",PURPLE,()->showSecurity());act(m,"সেটিংস",CYAN,()->showSettings());
+        act(m,"ইন্টিগ্রেশন ও API সংযোগ",BLUE,()->showIntegrations());act(m,"API কোটা ও খরচের রেকর্ড",AMBER,()->showUsage());act(m,"মডিউল যোগ-বিয়োগ ও সার্চ",CYAN,()->showTools());act(m,"নিরাপত্তা ও অ্যাক্সেস নীতি",PURPLE,()->showSecurity());act(m,"সেটিংস",CYAN,()->showSettings());
         act(body,"← হোমে ফিরুন",TILE,()->showHome());footer();
     }
     private void showCompany(boolean satya){
@@ -99,6 +106,76 @@ public class MainActivity extends Activity {
         else {tile(a,"♙","Clients","Client portal",CYAN,()->openWeb(nexoraSite+"client-portal"));tile(a,"⌘","Solutions","Service catalog",PURPLE,()->openWeb(nexoraSite+"solutions"));}
         LinearLayout b=row();body.addView(b);tile(b,"◈","Integrations","Connection status",BLUE,()->showIntegrations());tile(b,"▤","Usage & Costs","Manual ledger",AMBER,()->showUsage());
         act(body,"← Master Dashboard",TILE,()->showMaster());footer();
+    }
+    private Set<String> defaultModules(){
+        Set<String> d=new HashSet<>();
+        Collections.addAll(d,"সত্যপ্রবাহ নিউজরুম","ভিডিও ও সোশ্যাল মিডিয়া","Nexora ক্লায়েন্ট","Nexora সলিউশন","API ইন্টিগ্রেশন","API ব্যবহার ও খরচ","অ্যাপ সেটিংস");
+        return d;
+    }
+    private Set<String> getModules(){
+        Set<String> saved=prefs.getStringSet("managed_modules",null);
+        return new HashSet<>(saved==null?defaultModules():saved);
+    }
+    private void saveModules(Set<String> modules){prefs.edit().putStringSet("managed_modules",new HashSet<>(modules)).apply();}
+    private void showTools(){
+        page("Module & Password Tools","মডিউল পরিচালনা, সার্চ এবং পাসওয়ার্ড সহায়তা");
+        LinearLayout modules=card("মডিউল যোগ / বিয়োগ","নতুন মডিউল যোগ করুন, অপ্রয়োজনীয় মডিউল সরান এবং সার্চ করে খুঁজুন। পরিবর্তন এই ডিভাইসে সংরক্ষিত হবে।");
+        EditText search=new EditText(this);styleInput(search);search.setHint("🔎  মডিউলের নাম লিখে সার্চ করুন");search.setSingleLine(true);
+        modules.addView(search);
+        LinearLayout list=col();LinearLayout.LayoutParams listLp=new LinearLayout.LayoutParams(-1,-2);listLp.topMargin=dp(10);modules.addView(list,listLp);
+        Runnable render=()->{
+            list.removeAllViews();String q=search.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
+            ArrayList<String> names=new ArrayList<>(getModules());Collections.sort(names,String.CASE_INSENSITIVE_ORDER);
+            int shown=0;
+            for(String name:names){if(!name.toLowerCase(java.util.Locale.ROOT).contains(q))continue;shown++;
+                LinearLayout item=row();pad(item,10,8,8,8);item.setBackground(bg(TILE,12));
+                TextView label=txt("▣  "+name,13,FG,true);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));
+                TextView remove=button("− সরান",RED,()->new AlertDialog.Builder(this).setTitle("মডিউল সরাবেন?").setMessage(name+" তালিকা থেকে সরানো হবে।").setNegativeButton("বাতিল",null).setPositiveButton("সরান",(d,w)->{Set<String> m=getModules();m.remove(name);saveModules(m);render.run();}).show());
+                LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-2,-2);item.addView(remove,rp);
+                LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,-2);ip.bottomMargin=dp(6);list.addView(item,ip);
+            }
+            if(shown==0)list.addView(txt("কোনো মডিউল পাওয়া যায়নি।",12,MUTED,false));
+        };
+        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int before,int count){render.run();}public void afterTextChanged(Editable e){}});
+        act(modules,"＋ নতুন মডিউল যোগ করুন",BLUE,()->{
+            EditText name=new EditText(this);styleInput(name);name.setHint("মডিউলের নাম");
+            new AlertDialog.Builder(this).setTitle("নতুন মডিউল").setView(name).setNegativeButton("বাতিল",null).setPositiveButton("যোগ করুন",(d,w)->{
+                String n=name.getText().toString().trim();if(n.isEmpty()){toast("মডিউলের নাম লিখুন");return;}
+                Set<String> m=getModules();m.add(n);saveModules(m);search.setText("");render.run();toast("মডিউল যোগ হয়েছে");
+            }).show();
+        });
+        render.run();
+
+        LinearLayout pass=card("পাসওয়ার্ড Show / Hide","পাসওয়ার্ড লিখুন, চাইলে দৃশ্যমান করুন অথবা চার অক্ষরের অস্থায়ী কোড তৈরি করুন।");
+        LinearLayout inputRow=row();
+        EditText password=new EditText(this);styleInput(password);password.setHint("পাসওয়ার্ড লিখুন");password.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        inputRow.addView(password,new LinearLayout.LayoutParams(0,-2,1));
+        TextView toggle=button("SHOW",PURPLE,()->{
+            boolean hidden=(password.getInputType()&(InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_NUMBER_VARIATION_PASSWORD))!=0;
+            password.setInputType(InputType.TYPE_CLASS_TEXT|(hidden?InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:InputType.TYPE_TEXT_VARIATION_PASSWORD));
+            password.setSelection(password.getText().length());toggleTextPlaceholder();
+        });
+        inputRow.addView(toggle,new LinearLayout.LayoutParams(-2,-2));pass.addView(inputRow);
+        // The toggle label and input visibility are updated together.
+        toggle.setOnClickListener(v->{
+            boolean hidden=(password.getInputType()&InputType.TYPE_TEXT_VARIATION_PASSWORD)==InputType.TYPE_TEXT_VARIATION_PASSWORD;
+            password.setInputType(InputType.TYPE_CLASS_TEXT|(hidden?InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:InputType.TYPE_TEXT_VARIATION_PASSWORD));
+            password.setSelection(password.getText().length());toggle.setText(hidden?"HIDE":"SHOW");
+        });
+        act(pass,"✦  ৪ অক্ষরের কোড তৈরি করুন",CYAN,()->{
+            final String chars="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            SecureRandom random=new SecureRandom();StringBuilder code=new StringBuilder();
+            for(int i=0;i<4;i++)code.append(chars.charAt(random.nextInt(chars.length())));
+            password.setText(code.toString());password.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);toggle.setText("HIDE");
+        });
+        act(pass,"পাসওয়ার্ড কপি করুন",BLUE,()->{
+            String value=password.getText().toString();if(value.isEmpty()){toast("আগে পাসওয়ার্ড লিখুন বা তৈরি করুন");return;}
+            android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("Password",value));toast("কপি হয়েছে");
+        });
+        TextView warning=txt("নিরাপত্তা নোট: চার অক্ষরের কোড কেবল অস্থায়ী PIN/টেস্টের জন্য। ইমেইল, অ্যাডমিন বা গুরুত্বপূর্ণ অ্যাকাউন্টে শক্তিশালী দীর্ঘ পাসওয়ার্ড ব্যবহার করুন। এই টুলে পাসওয়ার্ড সংরক্ষণ করা হয় না।",11,AMBER,false);
+        warning.setPadding(0,dp(8),0,0);pass.addView(warning);
+        act(body,"← হোমে ফিরুন",TILE,()->showHome());footer();
     }
     private void showIntegrations(){
         page("Integration Center","সংযোগের অবস্থা ও অনুমোদন");
