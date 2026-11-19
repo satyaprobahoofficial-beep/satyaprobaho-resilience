@@ -137,15 +137,15 @@ public class MainActivity extends Activity {
             }
             if(shown==0)list.addView(txt("কোনো মডিউল পাওয়া যায়নি।",12,MUTED,false));
         };
-        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int before,int count){render.run();}public void afterTextChanged(Editable e){}});
+        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int before,int count){renderRef[0].run();}public void afterTextChanged(Editable e){}});
         act(modules,"＋ নতুন মডিউল যোগ করুন",BLUE,()->{
             EditText name=new EditText(this);styleInput(name);name.setHint("মডিউলের নাম");
             new AlertDialog.Builder(this).setTitle("নতুন মডিউল").setView(name).setNegativeButton("বাতিল",null).setPositiveButton("যোগ করুন",(d,w)->{
                 String n=name.getText().toString().trim();if(n.isEmpty()){toast("মডিউলের নাম লিখুন");return;}
-                Set<String> m=getModules();m.add(n);saveModules(m);search.setText("");render.run();toast("মডিউল যোগ হয়েছে");
+                Set<String> m=getModules();m.add(n);saveModules(m);search.setText("");renderRef[0].run();toast("মডিউল যোগ হয়েছে");
             }).show();
         });
-        render.run();
+        renderRef[0].run();
 
         LinearLayout pass=card("পাসওয়ার্ড Show / Hide","পাসওয়ার্ড লিখুন, চাইলে দৃশ্যমান করুন অথবা চার অক্ষরের অস্থায়ী কোড তৈরি করুন।");
         LinearLayout inputRow=row();
@@ -154,7 +154,7 @@ public class MainActivity extends Activity {
         TextView toggle=button("SHOW",PURPLE,()->{
             boolean hidden=(password.getInputType()&(InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_NUMBER_VARIATION_PASSWORD))!=0;
             password.setInputType(InputType.TYPE_CLASS_TEXT|(hidden?InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:InputType.TYPE_TEXT_VARIATION_PASSWORD));
-            password.setSelection(password.getText().length());toggleTextPlaceholder();
+            password.setSelection(password.getText().length());
         });
         inputRow.addView(toggle,new LinearLayout.LayoutParams(-2,-2));pass.addView(inputRow);
         // The toggle label and input visibility are updated together.
