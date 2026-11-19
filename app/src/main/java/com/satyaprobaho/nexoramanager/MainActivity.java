@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final int BG=Color.rgb(8,12,29), CARD=Color.rgb(17,25,49), TILE=Color.rgb(24,35,66);
@@ -80,7 +83,12 @@ public class MainActivity extends Activity {
         company="master";page("Command Center","দুই প্রতিষ্ঠানের নিরাপদ, একীভূত ব্যবস্থাপনা");
         LinearLayout hero=card("আপনার ব্যবসার কন্ট্রোল রুম","Satyaprobaho  •  Nexora International Technology");hero.setBackground(grad(Color.rgb(22,48,94),Color.rgb(49,35,99),20));
         hero.addView(txt("01  MASTER WORKSPACE",10,CYAN,true));act(hero,"মাস্টার ড্যাশবোর্ড খুলুন",BLUE,()->showMaster());
-        section("প্রতিষ্ঠান নির্বাচন");LinearLayout r=row();body.addView(r);tile(r,"📰","সত্যপ্রবাহ","নিউজরুম ও প্রকাশনা",CYAN,()->showCompany(true));tile(r,"✦","Nexora","IT ও ক্লায়েন্ট অপারেশন",PURPLE,()->showCompany(false));
+        section("প্রতিষ্ঠান নির্বাচন");
+        act(body,"📰  সত্যপ্রবাহ  |  SATYAPROBAHO",BLUE,()->showCompany(true));
+        act(body,"✦  NEXORA INTERNATIONAL TECHNOLOGY",PURPLE,()->showCompany(false));
+        EditText globalSearch=new EditText(this);styleInput(globalSearch);globalSearch.setHint("🔎  অ্যাডমিন, সংবাদ, API বা মডিউল সার্চ করুন");body.addView(globalSearch);
+        act(body,"সার্চ করুন",CYAN,()->runGlobalSearch(globalSearch.getText().toString()));
+        act(body,"আজকের ১২টি সংবাদ পরিচালনা",GREEN,()->showDailyNews());
         section("সিস্টেম অবস্থা");LinearLayout st=card("সংযোগ ও নিরাপত্তা","লাইভ API ডেটা শুধু অনুমোদিত সংযোগ থাকলেই দেখানো হবে।");
         status(st,"Cloudflare / Website","Website link",GREEN);status(st,"Supabase / Database","Not connected",AMBER);status(st,"GitHub Actions / Build","Not checked",AMBER);status(st,"YouTube / Facebook APIs","Not connected",AMBER);
         section("দ্রুত কাজ");LinearLayout q=row();body.addView(q);tile(q,"◈","ইন্টিগ্রেশন","সংযোগের অবস্থা",BLUE,()->showIntegrations());tile(q,"▤","API ব্যবহার","ম্যানুয়াল রেকর্ড",AMBER,()->showUsage());
@@ -99,7 +107,7 @@ public class MainActivity extends Activity {
         company=satya?"satya":"nexora";page(satya?"সত্যপ্রবাহ Dashboard":"Nexora Dashboard",satya?"NEWSROOM  •  PUBLISHING  •  MEDIA":"CLIENTS  •  PROJECTS  •  IT SERVICES");
         LinearLayout c=card(satya?"নিউজরুম কন্ট্রোল":"টেকনোলজি অপারেশন","অ্যাকাউন্ট: "+(satya?satyaEmail:nexoraEmail));
         c.addView(txt(satya?"বিদ্যমান নিরাপদ অ্যাডমিন প্যানেল থেকে সংবাদ প্রকাশনা পরিচালনা করুন।":"ক্লায়েন্ট, সলিউশন ও সার্ভিস ব্যবস্থাপনার জন্য Nexora পোর্টাল ব্যবহার করুন।",12,MUTED,false));
-        if(satya){act(c,"সত্যপ্রবাহ Admin Panel খুলুন",BLUE,()->openWeb(satyaAdmin));act(c,"সত্যপ্রবাহ মূল ওয়েবসাইট",CYAN,()->openWeb(satyaSite));}
+        if(satya){act(c,"সত্যপ্রবাহ Admin Panel খুলুন",BLUE,()->openWeb(satyaAdmin));act(c,"আজকের ১২টি সংবাদ: তালিকা / সম্পাদনা / ডিলিট",GREEN,()->showDailyNews());act(c,"সত্যপ্রবাহ মূল ওয়েবসাইট",CYAN,()->openWeb(satyaSite));}
         else {act(c,"Nexora Website",PURPLE,()->openWeb(nexoraSite));act(c,"Nexora Solutions",BLUE,()->openWeb(nexoraSite+"solutions"));act(c,"Nexora Client Portal",GREEN,()->openWeb(nexoraSite+"client-portal"));act(c,"Nexora Admin URL সেট করুন",AMBER,()->showSettings());}
         section("মডিউল ক্যাটালগ");LinearLayout a=row();body.addView(a);
         if(satya){tile(a,"✎","Newsroom","Editorial workflow",CYAN,()->openWeb(satyaAdmin));tile(a,"▶","Video & Social","বর্তমান সাইট",PURPLE,()->openWeb(satyaSite));}
@@ -177,6 +185,45 @@ public class MainActivity extends Activity {
         TextView warning=txt("নিরাপত্তা নোট: চার অক্ষরের কোড কেবল অস্থায়ী PIN/টেস্টের জন্য। ইমেইল, অ্যাডমিন বা গুরুত্বপূর্ণ অ্যাকাউন্টে শক্তিশালী দীর্ঘ পাসওয়ার্ড ব্যবহার করুন। এই টুলে পাসওয়ার্ড সংরক্ষণ করা হয় না।",11,AMBER,false);
         warning.setPadding(0,dp(8),0,0);pass.addView(warning);
         act(body,"← হোমে ফিরুন",TILE,()->showHome());footer();
+    }
+    private void runGlobalSearch(String query){
+        String q=query==null?"":query.trim().toLowerCase(Locale.ROOT);
+        if(q.isEmpty()){toast("সার্চ করার জন্য কিছু লিখুন");return;}
+        if(q.contains("সংবাদ")||q.contains("news")||q.contains("পত্রিকা")){showDailyNews();return;}
+        if(q.contains("পাস")||q.contains("password")||q.contains("module")||q.contains("মডিউল")){showTools();return;}
+        if(q.contains("api")||q.contains("quota")||q.contains("খরচ")||q.contains("মেয়াদ")){showUsage();return;}
+        if(q.contains("nexora")||q.contains("ইন্টারন্যাশনাল")){showCompany(false);return;}
+        if(q.contains("সত্য")||q.contains("satyaprobaho")){showCompany(true);return;}
+        toast("মিল পাওয়া যায়নি। সংবাদ, API, পাসওয়ার্ড, মডিউল বা প্রতিষ্ঠানের নাম লিখুন।");
+    }
+    private String todayKey(){return new SimpleDateFormat("yyyyMMdd",Locale.US).format(new Date());}
+    private void showDailyNews(){
+        company="satya";page("দৈনিক ১২ সংবাদ","প্রতিদিনের প্রকাশনা তালিকা • ডিভাইসে সংরক্ষিত ট্র্যাকার");
+        LinearLayout c=card("সত্যপ্রবাহ Admin Panel","লাইভ ওয়েবসাইটের প্রকৃত সংবাদ সম্পাদনা ও মুছে ফেলার জন্য মূল অ্যাডমিন প্যানেল খুলুন।");
+        act(c,"ওয়েবসাইটের আসল সংবাদ সম্পাদনা / ডিলিট",BLUE,()->openWeb(satyaAdmin));
+        LinearLayout tracker=card("আজকের ১২টি সংবাদ ট্র্যাকার","এখানে শিরোনাম ও লিংক এই ফোনে সংরক্ষিত হবে; এই ট্র্যাকার পরিবর্তন করলে লাইভ ওয়েবসাইটের সংবাদ বদলাবে না।");
+        for(int i=1;i<=12;i++){
+            final int slot=i;String key="daily_"+todayKey()+"_"+slot;
+            String title=prefs.getString(key+"_title","");String url=prefs.getString(key+"_url","");
+            LinearLayout item=col();pad(item,11,10,11,10);item.setBackground(bg(TILE,13));
+            item.addView(txt(String.format(Locale.US,"%02d. ",slot)+(title.isEmpty()?"সংবাদ যোগ করা হয়নি":title),14,FG,true));
+            if(!url.isEmpty())item.addView(txt(url,11,MUTED,false));
+            LinearLayout actions=row();
+            TextView edit=button(title.isEmpty()?"＋ যোগ করুন":"✎ সম্পাদনা",BLUE,()->newsDialog(slot));
+            TextView del=button("ডিলিট",RED,()->new AlertDialog.Builder(this).setTitle("এই এন্ট্রি মুছবেন?").setMessage("শুধু এই ফোনের আজকের ট্র্যাকার থেকে মুছবে।").setNegativeButton("না",null).setPositiveButton("মুছুন",(d,w)->{prefs.edit().remove(key+"_title").remove(key+"_url").apply();showDailyNews();}).show());
+            LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(0,-2,1);ap.setMargins(0,dp(7),dp(5),0);actions.addView(edit,ap);
+            LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,-2,1);bp.setMargins(dp(5),dp(7),0,0);actions.addView(del,bp);
+            item.addView(actions);LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,-2);ip.bottomMargin=dp(7);tracker.addView(item,ip);
+        }
+        act(body,"← সত্যপ্রবাহ ড্যাশবোর্ড",TILE,()->showCompany(true));footer();
+    }
+    private void newsDialog(int slot){
+        String key="daily_"+todayKey()+"_"+slot;LinearLayout form=col();pad(form,18,8,18,4);
+        EditText title=new EditText(this);styleInput(title);title.setHint("সংবাদের শিরোনাম");title.setText(prefs.getString(key+"_title",""));form.addView(title);
+        EditText url=new EditText(this);styleInput(url);url.setHint("সংবাদ URL (ঐচ্ছিক)");url.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI);url.setText(prefs.getString(key+"_url",""));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(9);form.addView(url,lp);
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("সংবাদ "+slot+" সম্পাদনা").setView(form).setNegativeButton("বাতিল",null).setPositiveButton("সংরক্ষণ",null).create();
+        dlg.setOnShowListener(x->{dlg.getButton(-1).setOnClickListener(v->{String t=title.getText().toString().trim(),u=url.getText().toString().trim();if(t.isEmpty()){toast("সংবাদের শিরোনাম লিখুন");return;}if(!u.isEmpty()&&!validHttps(u)){toast("URL অবশ্যই https:// দিয়ে শুরু হতে হবে");return;}prefs.edit().putString(key+"_title",t).putString(key+"_url",u).apply();dlg.dismiss();showDailyNews();});});dlg.show();
     }
     private void showIntegrations(){
         page("Integration Center","সংযোগের অবস্থা ও অনুমোদন");
