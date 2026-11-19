@@ -233,20 +233,35 @@ public class MainActivity extends Activity {
         act(body,"← হোমে ফিরুন",TILE,()->showHome());footer();
     }
     private void showUsage(){
-        page("API Usage Ledger","কোটা, খরচ ও মেয়াদ | Manual records");
-        LinearLayout c=card("স্বচ্ছ হিসাব","Provider থেকে live quota এখনো পড়া হচ্ছে না। এই তালিকার তথ্যগুলো ম্যানুয়াল রেকর্ড, live usage নয়।");
+        page("API Usage Ledger","কী ব্যবহার হচ্ছে • মেয়াদ • বাকি অ্যাকশন");
+        LinearLayout c=card("ব্যবহার ও মেয়াদের বিস্তারিত","প্রতিটি সেবার প্যাকেজ, মোট কোটা, ব্যবহৃত অ্যাকশন এবং মেয়াদ লিখুন। এগুলো ম্যানুয়াল হিসাব—provider API থেকে লাইভ ডেটা নয়।");
         String[] ps={"Cloudflare","Supabase","GitHub Actions","Vercel","YouTube API","Facebook Graph API","Brevo","Other"};
-        for(String p:ps){String v=prefs.getString("usage_"+p,"কোনো রেকর্ড নেই");status(c,p,v,v.equals("কোনো রেকর্ড নেই")?MUTED:CYAN);}
-        act(c,"＋ নতুন ম্যানুয়াল রেকর্ড",AMBER,()->usageDialog());
-        act(c,"সব ম্যানুয়াল রেকর্ড মুছুন",RED,()->new AlertDialog.Builder(this).setTitle("রেকর্ড মুছবেন?").setMessage("শুধু এই ডিভাইসে রাখা ম্যানুয়াল রেকর্ড মুছে যাবে।").setNegativeButton("বাতিল",null).setPositiveButton("মুছুন",(d,w)->{for(String p:ps)prefs.edit().remove("usage_"+p).apply();showUsage();}).show());
+        for(String p:ps){
+            String v=prefs.getString("usage_"+p,"");String days=prefs.getString("usage_"+p+"_days","");String left=prefs.getString("usage_"+p+"_left","");
+            status(c,p,v.isEmpty()?"রেকর্ড নেই":v,MUTED);
+            if(!days.isEmpty())status(c,"মেয়াদ / দিন বাকি",days,CYAN);
+            if(!left.isEmpty())status(c,"অ্যাকশন বাকি",left,GREEN);
+        }
+        act(c,"＋ সেবা / প্যাকেজের বিস্তারিত যোগ বা আপডেট",AMBER,()->usageDialog());
+        act(c,"সব ম্যানুয়াল রেকর্ড মুছুন",RED,()->new AlertDialog.Builder(this).setTitle("রেকর্ড মুছবেন?").setMessage("শুধু এই ডিভাইসের ম্যানুয়াল রেকর্ড মুছে যাবে।").setNegativeButton("বাতিল",null).setPositiveButton("মুছুন",(d,w)->{for(String p:ps)prefs.edit().remove("usage_"+p).remove("usage_"+p+"_days").remove("usage_"+p+"_left").apply();showUsage();}).show());
         act(body,"← হোমে ফিরুন",TILE,()->showHome());footer();
     }
     private void styleInput(EditText e){e.setTextColor(FG);e.setHintTextColor(MUTED);e.setSingleLine(true);e.setBackground(bg(TILE,12));pad(e,12,10,12,10);}
     private void usageDialog(){
-        LinearLayout form=col();pad(form,18,8,18,4);EditText p=new EditText(this);p.setHint("Provider নাম");styleInput(p);form.addView(p);
-        EditText d=new EditText(this);d.setHint("Usage / quota / cost / expiry");styleInput(d);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(10);form.addView(d,lp);
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("Manual usage record").setView(form).setNegativeButton("বাতিল",null).setPositiveButton("সংরক্ষণ",null).create();
-        dlg.setOnShowListener(x->{dlg.getWindow().setBackgroundDrawable(bg(CARD,18));dlg.getButton(-1).setTextColor(CYAN);dlg.getButton(-2).setTextColor(MUTED);dlg.getButton(-1).setOnClickListener(v->{String key=p.getText().toString().trim(),val=d.getText().toString().trim();if(key.isEmpty()||val.isEmpty()){toast("Provider ও তথ্য লিখুন");return;}prefs.edit().putString("usage_"+key,val).apply();dlg.dismiss();showUsage();});});dlg.show();
+        LinearLayout form=col();pad(form,18,8,18,4);
+        EditText p=new EditText(this);p.setHint("সেবা / Provider নাম");styleInput(p);form.addView(p);
+        EditText plan=new EditText(this);plan.setHint("প্যাকেজ / কী কী ব্যবহার হচ্ছে");styleInput(plan);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(8);form.addView(plan,lp);
+        EditText total=new EditText(this);total.setHint("মোট অ্যাকশন / কোটা");total.setInputType(InputType.TYPE_CLASS_NUMBER);styleInput(total);lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(8);form.addView(total,lp);
+        EditText used=new EditText(this);used.setHint("ব্যবহৃত অ্যাকশন");used.setInputType(InputType.TYPE_CLASS_NUMBER);styleInput(used);lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(8);form.addView(used,lp);
+        EditText days=new EditText(this);days.setHint("মেয়াদ শেষ হতে দিন বাকি");days.setInputType(InputType.TYPE_CLASS_NUMBER);styleInput(days);lp=new LinearLayout.LayoutParams(-1,-2);lp.topMargin=dp(8);form.addView(days,lp);
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("সেবা / ব্যবহার বিবরণ").setView(form).setNegativeButton("বাতিল",null).setPositiveButton("সংরক্ষণ",null).create();
+        dlg.setOnShowListener(x->{dlg.getButton(-1).setOnClickListener(v->{
+            String key=p.getText().toString().trim(),pl=plan.getText().toString().trim();
+            if(key.isEmpty()||pl.isEmpty()||total.getText().toString().trim().isEmpty()||used.getText().toString().trim().isEmpty()||days.getText().toString().trim().isEmpty()){toast("সব ঘর পূরণ করুন");return;}
+            try{int t=Integer.parseInt(total.getText().toString()),u=Integer.parseInt(used.getText().toString()),d=Integer.parseInt(days.getText().toString());if(t<0||u<0||d<0||u>t){toast("সংখ্যা সঠিকভাবে দিন; ব্যবহৃত অ্যাকশন মোট কোটার বেশি হতে পারবে না");return;}
+                prefs.edit().putString("usage_"+key,pl+" | মোট: "+t+" | ব্যবহৃত: "+u).putString("usage_"+key+"_days",d+" দিন").putString("usage_"+key+"_left",(t-u)+" অ্যাকশন").apply();dlg.dismiss();showUsage();
+            }catch(Exception e){toast("সংখ্যা সঠিকভাবে লিখুন");}
+        });});dlg.show();
     }
     private void showSettings(){
         page("Workspace Settings","ডিভাইস-ভিত্তিক অ্যাপ কনফিগারেশন");
