@@ -141,11 +141,38 @@ public class MainActivity extends Activity {
     }
     private boolean validHttps(String s){try{URI u=URI.create(s);return "https".equalsIgnoreCase(u.getScheme())&&u.getHost()!=null;}catch(Exception e){return false;}}
     private void openWeb(String url){
-        if(!validHttps(url)){toast("শুধু সঠিক HTTPS ঠিকানা খোলা যাবে");return;}if(web!=null){web.destroy();web=null;}
-        page("Secure Web Workspace","HTTPS connection");act(body,"← ড্যাশবোর্ডে ফিরুন",TILE,()->{if(web!=null){web.destroy();web=null;}if(company.equals("satya"))showCompany(true);else if(company.equals("nexora"))showCompany(false);else showHome();});
-        web=new WebView(this);web.setBackgroundColor(BG);web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setSupportMultipleWindows(false);
-        web.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView v,String next){if(validHttps(next))return false;toast("নিরাপত্তার জন্য লিংক ব্লক করা হয়েছে");return true;}});
-        web.setWebChromeClient(new WebChromeClient());LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(560));lp.topMargin=dp(12);body.addView(web,lp);web.loadUrl(url);
+        if(!validHttps(url)){toast("শুধু সঠিক HTTPS ঠিকানা খোলা যাবে");return;}
+        if(web!=null){web.stopLoading();web.destroy();web=null;}
+        LinearLayout root=col();root.setBackgroundColor(BG);
+        LinearLayout bar=row();pad(bar,12,8,12,8);bar.setBackgroundColor(Color.rgb(13,19,43));
+        TextView back=button("← Dashboard",TILE,()->{if(web!=null){web.stopLoading();web.destroy();web=null;}if(company.equals("satya"))showCompany(true);else if(company.equals("nexora"))showCompany(false);else showHome();});
+        bar.addView(back,new LinearLayout.LayoutParams(-2,-2));
+        bar.addView(txt("  Secure Web Workspace",14,FG,true),new LinearLayout.LayoutParams(0,-2,1));
+        root.addView(bar,new LinearLayout.LayoutParams(-1,-2));
+        web=new WebView(this);web.setBackgroundColor(BG);
+        web.setVerticalScrollBarEnabled(true);web.setHorizontalScrollBarEnabled(false);
+        web.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+        android.webkit.WebSettings settings=web.getSettings();
+        settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setDatabaseEnabled(true);
+        settings.setLoadWithOverviewMode(true);settings.setUseWideViewPort(true);
+        settings.setSupportZoom(true);settings.setBuiltInZoomControls(true);settings.setDisplayZoomControls(false);
+        settings.setDefaultTextEncodingName("UTF-8");settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setSupportMultipleWindows(false);settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);
+        android.webkit.CookieManager cookies=android.webkit.CookieManager.getInstance();
+        cookies.setAcceptCookie(true);cookies.setAcceptThirdPartyCookies(web,true);
+        web.setWebViewClient(new WebViewClient(){
+            @Override public boolean shouldOverrideUrlLoading(WebView v,String next){
+                if(validHttps(next))return false;
+                toast("নিরাপত্তার জন্য এই লিংকটি ব্লক করা হয়েছে");return true;
+            }
+            @Override public void onPageFinished(WebView v,String loaded){super.onPageFinished(v,loaded);cookies.flush();}
+        });
+        web.setWebChromeClient(new WebChromeClient());
+        root.addView(web,new LinearLayout.LayoutParams(-1,0,1));
+        setContentView(root);
+        getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        web.loadUrl(url);
     }
     private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
     @Override public void onBackPressed(){if(web!=null&&web.canGoBack()){web.goBack();return;}if(web!=null){web.destroy();web=null;}if(company.equals("satya"))showCompany(true);else if(company.equals("nexora"))showCompany(false);else showHome();}
