@@ -123,7 +123,8 @@ public class MainActivity extends Activity {
         EditText search=new EditText(this);styleInput(search);search.setHint("🔎  মডিউলের নাম লিখে সার্চ করুন");search.setSingleLine(true);
         modules.addView(search);
         LinearLayout list=col();LinearLayout.LayoutParams listLp=new LinearLayout.LayoutParams(-1,-2);listLp.topMargin=dp(10);modules.addView(list,listLp);
-        final Runnable[] renderRef=new Runnable[1];\n        renderRef[0]=()->{
+        final Runnable[] renderRef=new Runnable[1];
+        renderRef[0]=()->{
             list.removeAllViews();String q=search.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
             ArrayList<String> names=new ArrayList<>(getModules());Collections.sort(names,String.CASE_INSENSITIVE_ORDER);
             int shown=0;
